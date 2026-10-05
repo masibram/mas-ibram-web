@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mas Ibram WEB - Downloader</title>
+    <!-- FontAwesome Icons & Tailwind CSS CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandDark: '#0d1117',
+                        brandCard: '#161b22',
+                        brandAccent: '#3b82f6',
+                        brandGray: '#8b949e',
+                        brandSuccess: '#10b981',
+                        brandWarning: '#f59e0b',
+                        brandDanger: '#ef4444'
+                    },
+                    aspectRatio: {
+                        '16/9': '16 / 9',
+                        'hero': '631 / 319'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #080a0f;
+            color: #ffffff;
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-image: linear-gradient(to bottom, rgba(8, 10, 15, 0.5), rgba(8, 10, 15, 0.8)), url('https://i.postimg.cc/bwPrnq6p/193516b63acf80682399a52ba0b4e14f.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            transition: background-image 0.4s ease-in-out;
+        }
+        
+        .active-tab {
+            color: #ffffff !important;
+            border-bottom: 3px solid #3b82f6;
+            font-weight: 700;
+        }
+
+        .inactive-tab {
+            color: #8b949e !important;
+            border-bottom: 3px solid transparent;
+        }
+
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 28px -5px rgba(59, 130, 246, 0.35);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Toast animation styles */
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        .toast-animate {
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .toast-exit {
+            animation: fadeOut 0.3s forwards;
+        }
+    </style>
+</head>
+<body class="pb-28 min-h-screen relative" id="mainBody">
+
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full px-4 pointer-events-none"></div>
+
+    <div class="max-w-4xl mx-auto px-4 pt-4">
+
+        <!-- ADMIN ACTION BAR -->
+        <div id="adminControlBar" class="mb-4 bg-slate-900/90 border border-blue-500/40 rounded-2xl p-3.5 backdrop-blur-xl shadow-2xl flex flex-wrap items-center justify-between gap-3 text-xs transition-all hidden">
+            <div class="flex items-center gap-2 text-blue-400 font-semibold">
+                <i class="fas fa-user-shield text-base"></i>
+                <span>Panel Kontrol Admin</span>
+                <span class="bg-blue-500/20 text-blue-300 text-[10px] px-2 py-0.5 rounded-full border border-blue-400/30">Aktif</span>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="exportHtmlFile()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-3.5 py-2 rounded-xl shadow-lg hover:shadow-emerald-500/20 transition flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-file-download text-sm"></i>
+                    <span>Simpan & Unduh Kode HTML</span>
+                </button>
+
+                <button onclick="confirmResetDefaults()" class="bg-rose-600/80 hover:bg-rose-600 text-white font-medium px-3 py-2 rounded-xl border border-rose-500/30 transition flex items-center gap-1.5 cursor-pointer" title="Kembalikan semua gambar ke tampilan default">
+                    <i class="fas fa-undo-alt text-xs"></i>
+                    <span>Reset Gambar</span>
+                </button>
+
+                <button onclick="logoutAdmin()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-2 rounded-xl border border-gray-700 transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fas fa-sign-out-alt text-xs"></i>
+                    <span>Keluar Admin</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- HEADER HERO -->
+        <div class="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-white/10 group mb-6" style="aspect-ratio: 631 / 319;">
+            <img id="heroImage" src="https://i.postimg.cc/bNZkg0fg/cced88c475fe7867b3ce1c8c0e0e4183.jpg" alt="Hero Banner" class="w-full h-full object-cover transition-opacity duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-6">
+                <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-wide drop-shadow-md">Mas Ibram WEB</h1>
+                <p class="text-sm md:text-base text-gray-300 mt-1 flex items-center gap-2">
+                    <span>Platform Downloader Media & Fitur Praktis</span>
+                    <span class="text-xs bg-blue-600/60 text-blue-200 px-2.5 py-0.5 rounded-full border border-blue-400/30">v2.6 Pro</span>
+                </p>
+            </div>
+
+            <div class="absolute top-3 right-3 flex items-center gap-2 z-10">
+                <button id="editBgBtn" onclick="openEditModal('bg')" class="hidden bg-purple-600/90 hover:bg-purple-600 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md border border-purple-400/30 transition flex items-center gap-1.5 shadow-lg cursor-pointer" title="Ganti Latar Belakang Utama Web">
+                    <i class="fas fa-paint-brush"></i>
+                    <span>BG Utama</span>
+                </button>
+                <button id="editHeroBtn" onclick="openEditModal('hero')" class="hidden bg-blue-600/90 hover:bg-blue-600 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md border border-blue-400/30 transition flex items-center gap-1.5 shadow-lg cursor-pointer" title="Ganti Banner Hero">
+                    <i class="fas fa-pen"></i>
+                    <span>Banner Hero</span>
+                </button>
+                <button onclick="toggleAdminModal()" id="adminMainLockBtn" class="bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 transition flex items-center gap-1.5 cursor-pointer">
+                    <i id="adminLockIcon" class="fas fa-lock text-gray-300"></i>
+                    <span id="adminBtnText">Mode Admin</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB NAVIGASI -->
+        <div class="flex border-b border-gray-700/60 mb-6 gap-6 text-sm md:text-base font-medium">
+            <button id="tab-downloader" onclick="switchTab('downloader')" class="pb-3 active-tab transition-all duration-200 flex items-center gap-2 cursor-pointer">
+                <i class="fas fa-cloud-download-alt text-blue-400"></i> Downloader
+            </button>
+            <button id="tab-fitur" onclick="switchTab('fitur')" class="pb-3 inactive-tab transition-all duration-200 flex items-center gap-2 cursor-pointer">
+                <i class="fas fa-tools text-purple-400"></i> Fitur Tambahan
+            </button>
+            <button id="tab-tatacara" onclick="switchTab('tatacara')" class="pb-3 inactive-tab transition-all duration-200 flex items-center gap-2 cursor-pointer">
+                <i class="fas fa-book-open text-emerald-400"></i> Tata Cara Penggunaan
+            </button>
+        </div>
+
+        <!-- KONTEN TAB: DOWNLOADER -->
+        <div id="content-downloader" class="tab-content">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                
+                <!-- YouTube -->
+                <div class="relative bg-brandCard rounded-xl overflow-hidden border border-white/10 card-hover cursor-pointer group" style="aspect-ratio: 16/9;" onclick="openDownloaderModal('YouTube', 'fab fa-youtube text-red-500')">
+                    <img id="img-dl-1" src="https://i.postimg.cc/PqKFMYBt/20261004-173134.jpg" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 flex flex-col justify-end">
+                        <span class="text-xs md:text-sm font-bold text-white flex items-center gap-1.5">
+                            <i class="fab fa-youtube text-red-500 text-base"></i> YouTube
+                        </span>
+                        <span class="text-[10px] md:text-xs text-gray-300">MP4 & MP3 No Watermark</span>
+                    </div>
+                    <button id="edit-btn-dl-1" onclick="event.stopPropagation(); openEditModal('dl', 1)" class="hidden absolute top-2 right-2 bg-black/70 hover:bg-blue-600 text-white p-2 rounded-full border border-white/20 transition shadow-lg" title="Edit Gambar YouTube">
+                        <i class="fas fa-pen text-[10px]"></i>
+                    </button>
+                </div>
+
+                <!-- TikTok -->
+                <div class="relative bg-brandCard rounded-xl overflow-hidden border border-white/10 card-hover cursor-pointer group" style="aspect-ratio: 16/9;" onclick="openDownloaderModal('TikTok', 'fab fa-tiktok text-cyan-400')">
+                    <img id="img-dl-2" src="https://i.postimg.cc/TYgxJNQ5/20261004-175553.jpg" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 flex flex-col justify-end">
+                        <span class="text-xs md:text-sm font-bold text-white flex items-center gap-1.5">
+                            <i class="fab fa-tiktok text-cyan-400 text-base"></i> TikTok
+                        </span>
+                        <span class="text-[10px] md:text-xs text-gray-300">MP4 & MP3 No Watermark</span>
+                    </div>
+                    <button id="edit-btn-dl-2" onclick="event.stopPropagation(); openEditModal('dl', 2)" class="hidden absolute top-2 right-2 bg-black/70 hover:bg-blue-600 text-white p-2 rounded-full border border-white/20 transition shadow-lg" title="Edit Gambar TikTok">
+                        <i class="fas fa-pen text-[10px]"></i>
+                    </button>
+                </div>
+
+                <!-- Spotify -->
+                <div class="relative bg-brandCard rounded-xl overflow-hidden border border-white/10 card-hover cursor-pointer group" style="aspect-ratio: 16/9;" onclick="openDownloaderModal('Spotify', 'fab fa-spotify text-green-500')">
+                    <img id="img-dl-3" src="https://i.postimg.cc/kGtBdcsP/20261004-162331.jpg" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 flex flex-col justify-end">
+                        <span class="text-xs md:text-sm font-bold text-white flex items-center gap-1.5">
+                            <i class="fab fa-spotify text-green-500 text-base"></i> Spotify
+                        </span>
+                        <span class="text-[10px] md:text-xs text-gray-300">MP3 High Quality</span>
+                    </div>
+                    <button id="edit-btn-dl-3" onclick="event.stopPropagation(); openEditModal('dl', 3)" class="hidden absolute top-2 right-2 bg-black/70 hover:bg-blue-600 text-white p-2 rounded-full border border-white/20 transition shadow-lg" title="Edit Gambar Spotify">
+                        <i class="fas fa-pen text-[10px]"></i>
+                    </button>
+                </div>
+
+                <!-- Instagram -->
+                <div class="relative bg-brandCard rounded-xl overflow-hidden border border-white/10 card-hover cursor-pointer group" style="aspect-ratio: 16/9;" onclick="openDownloaderModal('Instagram', 'fab fa-instagram text-pink-500')">
+                    <img id="img-dl-4" src="https://i.postimg.cc/nctgpFYs/20261004-180038.jpg" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 flex flex-col justify-end">
+                        <span class="text-xs md:text-sm font-bold text-white flex items-center gap-1.5">
+                            <i class="fab fa-instagram text-pink-500 text-base"></i> Instagram
+                        </span>
+                        <span class="text-[10px] md:text-xs text-gray-300">Reels & Post MP4/MP3</span>
+                    </div>
+                    <button id="edit-btn-dl-4" onclick="event.stopPropagation(); openEditModal('dl', 4)" class="hidden absolute top-2 right-2 bg-black/70 hover:bg-blue-600 text-white p-2 rounded-full border border-white/20 transition shadow-lg" title="Edit Gambar Instagram">
+                        <i class="fas fa-pen text-[10px]"></i>
+                    </button>
+                </div>
+
+                <!-- Facebook -->
+                <div class="relative bg-brandCard rounded-xl overflow-hidden border border-white/10 card-hover cursor-pointer group" style="aspect-ratio: 16/9;" onclick="openDownloaderModal('Facebook', 'fab fa-facebook text-blue-500')">
+                    <img id="img-dl-5" src="https://i.postimg.cc/XYszfwMv/20261004-180806.jpg" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 flex flex-col justify-end">
+                        <span class="text-xs md:text-sm font-bold text-white flex items-center gap-1.5">
+                            <i class="fab fa-facebook text-blue-500 text-base"></i> Facebook
+                        </span>
+                        <span class="text-[10px] md:text-xs text-gray-300">Video HD & Audio</span>
+                    </div>
+                    <button id="edit-btn-dl-5" onclick="event.stopPropagation(); openEditModal('dl', 5)" class="hidden absolute top-2 right-2 bg-black/70 hover:bg-blue-600 text-white p-2 rounded-full border border-white/20 transition shadow-lg" title="Edit Gambar Facebook">
+                        <i class="fas fa-pen text-[10px]"></i>
+                    </button>
+                </div>
+
+                <!-- Twitter / X -->
+                <div class="relative bg-brandCard rounded-xl overflow-hidden border border-white/10 card-hover cursor-pointer group" style="aspect-ratio: 16/9;" onclick="openDownloaderModal('Twitter / X', 'fab fa-x-twitter text-gray-200')">
+                    <img id="img-dl-6" src="https://i.postimg.cc/KjhqGfT6/20261004-180800.jpg" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 flex flex-col justify-end">
+                        <span class="text-xs md:text-sm font-bold text-white flex items-center gap-1.5">
+                            <i class="fab fa-x-twitter text-gray-200 text-base"></i> Twitter / X
+                        </span>
+                        <span class="text-[10px] md:text-xs text-gray-300">Video & GIF Downloader</span>
+                    </div>
+                    <button id="edit-btn-dl-6" onclick="event.stopPropagation(); openEditModal('dl', 6)" class="hidden absolute top-2 right-2 bg-black/70 hover:bg-blue-600 text-white p-2 rounded-full border border-white/20 transition shadow-lg" title="Edit Gambar Twitter/X">
+                        <i class="fas fa-pen text-[10px]"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- KONTEN TAB: FITUR TAMBAHAN (Sembunyi) -->
+        <div id="content-fitur" class="tab-content hidden">
+            <div class="flex flex-col gap-4">
+                <div class="relative bg-brandCard rounded-xl overflow-hidden border border-white/10 card-hover cursor-pointer group w-full" style="aspect-ratio: 16/9;">
+                    <img id="img-ft-1" src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent p-5 flex flex-col justify-center">
+                        <span class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fas fa-compress-alt text-blue-400"></i> Kompresor Video & Gambar
+                        </span>
+                        <p class="text-xs text-gray-300 mt-1 max-w-sm">Kecilkan ukuran file media tanpa mengurangi kualitas tampilan secara signifikan.</p>
+                    </div>
+                    <button id="edit-btn-ft-1" onclick="event.stopPropagation(); openEditModal('ft', 1)" class="hidden absolute top-2 right-2 bg-black/70 hover:bg-blue-600 text-white p-2 rounded-full border border-white/20 transition shadow-lg">
+                        <i class="fas fa-pen text-[10px]"></i>
+                    </button>
+                </div>
+                <!-- Card lainnya (dipersingkat demi kerapian visual, fitur bisa ditambah/edit admin) -->
+                <div class="text-center p-4 border border-white/10 rounded-xl bg-black/30">
+                    <p class="text-sm text-gray-400"><i class="fas fa-info-circle mr-1"></i> Fitur tambahan sedang dalam tahap pengembangan.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- KONTEN TAB: TATA CARA PENGGUNAAN -->
+        <div id="content-tatacara" class="tab-content hidden">
+            <div class="bg-brandCard/90 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-xl">
+                <h3 class="text-xl font-bold mb-4 text-blue-400 flex items-center gap-2">
+                    <i class="fas fa-book-open"></i> Petunjuk Penggunaan
+                </h3>
+                <div class="space-y-4 text-sm text-gray-300">
+                    <div class="flex items-start gap-3 bg-black/30 p-3 rounded-xl border border-white/5">
+                        <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-md">1</span>
+                        <div>
+                            <strong class="text-white block mb-0.5">Salin Link Media:</strong>
+                            <p class="text-gray-300">Buka aplikasi sosial media Anda lalu klik opsi Bagikan / Share dan pilih <em>Salin Tautan (Copy Link)</em>.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 bg-black/30 p-3 rounded-xl border border-white/5">
+                        <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-md">2</span>
+                        <div>
+                            <strong class="text-white block mb-0.5">Tempel & Pilih Format:</strong>
+                            <p class="text-gray-300">Buka platform downloader pada web ini, masukkan link yang telah disalin, lalu klik proses MP4 atau MP3.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 bg-black/30 p-3 rounded-xl border border-white/5">
+                        <span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-md">3</span>
+                        <div>
+                            <strong class="text-white block mb-0.5">Sistem Multi-Layer Berjalan:</strong>
+                            <p class="text-gray-300">Web akan otomatis mencari server API terbaik jika link Anda sulit diakses atau terkena blokir, mohon tunggu beberapa detik.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAV PAGES -->
+        <div id="page-utama" class="hidden">
+            <div class="bg-brandCard/90 backdrop-blur-md rounded-2xl p-8 border border-white/10 text-center my-6 shadow-xl">
+                <div class="w-16 h-16 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-blue-500/30">
+                    <i class="fas fa-home"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Selamat Datang di Mas Ibram WEB</h2>
+                <p class="text-gray-400 text-sm mt-2 max-w-md mx-auto">Gunakan menu navigasi di bawah atau beralih ke tab <strong>Download</strong> untuk mengakses layanan pengunduhan media sosial secara mudah dan cepat.</p>
+            </div>
+        </div>
+
+        <div id="page-informasi" class="hidden">
+            <div class="bg-brandCard/90 backdrop-blur-md rounded-2xl p-6 border border-white/10 my-6 shadow-xl">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-2xl font-bold text-white shadow-lg border border-white/20">
+                        MI
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Informasi Pengembang</h2>
+                        <p class="text-xs text-blue-400 font-medium">Mas Ibram WEB Portal v2.6</p>
+                    </div>
+                </div>
+                <div class="border-t border-gray-700/60 pt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-400">
+                    <div class="flex items-center gap-2 bg-black/30 p-2.5 rounded-lg border border-white/5"><i class="fas fa-code text-blue-400 w-5"></i> Pengembang: <strong class="text-white">Mas Ibram</strong></div>
+                    <div class="flex items-center gap-2 bg-black/30 p-2.5 rounded-lg border border-white/5"><i class="fas fa-shield-alt text-emerald-400 w-5"></i> Multi-Layer API: <span class="text-emerald-400 font-semibold">Aktif</span></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM NAVBAR -->
+    <div class="fixed bottom-0 left-0 right-0 bg-brandDark/95 backdrop-blur-xl border-t border-white/10 py-2.5 z-40 shadow-2xl">
+        <div class="max-w-md mx-auto flex justify-around items-center px-4">
+            <button onclick="switchBottomNav('download')" id="bnav-download" class="flex flex-col items-center gap-1 text-blue-400 transition cursor-pointer">
+                <i class="fas fa-download text-lg"></i>
+                <span class="text-[11px] font-medium">Download</span>
+            </button>
+            <button onclick="switchBottomNav('utama')" id="bnav-utama" class="flex flex-col items-center gap-1 text-gray-400 hover:text-white transition cursor-pointer">
+                <i class="fas fa-home text-lg"></i>
+                <span class="text-[11px] font-medium">Utama</span>
+            </button>
+            <button onclick="switchBottomNav('informasi')" id="bnav-informasi" class="flex flex-col items-center gap-1 text-gray-400 hover:text-white transition cursor-pointer">
+                <i class="fas fa-info-circle text-lg"></i>
+                <span class="text-[11px] font-medium">Informasi</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP DOWNLOADER -->
+    <div id="downloaderModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-brandCard border border-white/10 rounded-2xl w-full max-w-md p-6 relative shadow-2xl max-h-[95vh] overflow-y-auto">
+            <button onclick="closeDownloaderModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer p-1">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                    <i id="modalIcon" class="fab fa-tiktok text-cyan-400"></i>
+                </div>
+                <h3 id="modalTitle" class="text-lg font-bold text-white">TikTok Downloader</h3>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1.5">Tempel Tautan / URL Media:</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="dlInputUrl" placeholder="https://..." class="w-full bg-black/60 border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition">
+                        <button onclick="pasteClipboard()" class="bg-gray-800 hover:bg-gray-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-semibold shrink-0 border border-white/10 transition flex items-center gap-1.5 cursor-pointer">
+                            <i class="fas fa-paste text-blue-400"></i>
+                            <span>Tempel</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OPSI RESOLUSI VIDEO -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1.5">Pilih Resolusi Video:</label>
+                    <select id="videoResolution" class="w-full bg-black/60 border border-gray-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 transition cursor-pointer">
+                        <option value="1080p">1080p (Full HD - Kualitas Tertinggi)</option>
+                        <option value="720p" selected>720p (HD - Standar Populer)</option>
+                        <option value="480p">480p (SD - Hemat Kuota)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <button onclick="processDownload('MP4')" class="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-lg cursor-pointer">
+                        <i class="fas fa-video"></i> Proses MP4
+                    </button>
+                    <button onclick="processDownload('MP3')" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-lg cursor-pointer">
+                        <i class="fas fa-music"></i> Proses MP3
+                    </button>
+                </div>
+
+                <div id="dlStatus" class="hidden text-center text-xs py-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    <i class="fas fa-spinner fa-spin mr-1.5"></i> Memproses & mencari server (harap tunggu)...
+                </div>
+
+                <!-- PREVIEW DAN RESULT DOWNLOAD LANGSUNG DI POPUP -->
+                <div id="dlResultContainer" class="hidden border-t border-gray-700/60 pt-4 mt-3">
+                    <p class="text-xs text-emerald-400 font-semibold mb-2 flex items-center gap-1.5">
+                        <i class="fas fa-check-circle"></i> File Siap Diunduh:
+                    </p>
+                    
+                    <div id="mediaPreviewArea" class="mb-3 rounded-xl overflow-hidden border border-white/10 bg-black/40 p-2 text-center">
+                        <!-- Preview media disisipkan secara dinamis -->
+                    </div>
+
+                    <button id="btnDirectDownload" onclick="downloadBlob()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg transition cursor-pointer">
+                        <i class="fas fa-file-download text-sm"></i> Unduh File Sekarang
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT GAMBAR -->
+    <div id="editModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-brandCard border border-white/10 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+            <button onclick="closeEditModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer p-1">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold mb-1 flex items-center gap-2 text-white">
+                <i class="fas fa-image text-blue-400"></i> Ubah URL Gambar
+            </h3>
+            
+            <div class="space-y-4 mt-4">
+                <div class="w-full h-32 rounded-xl bg-black/50 border border-gray-700 overflow-hidden relative flex items-center justify-center">
+                    <img id="editPreviewImg" src="" alt="Preview" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <input type="text" id="newImgUrl" oninput="updateImagePreview()" class="w-full bg-black/60 border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeEditModal()" class="w-1/2 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl text-xs font-semibold border border-white/10 transition cursor-pointer">Batal</button>
+                    <button onclick="saveImageChange()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-lg cursor-pointer">Simpan Perubahan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LOGIN ADMIN -->
+    <div id="adminModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-brandCard border border-white/10 rounded-2xl w-full max-w-sm p-6 relative shadow-2xl">
+            <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer p-1">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-xl mx-auto mb-3">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-1">Login Admin</h3>
+            </div>
+            <div class="space-y-4">
+                <input type="password" id="adminPassword" placeholder="Sandi: admin123" class="w-full bg-black/60 border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition text-center" onkeypress="if(event.key === 'Enter') checkAdmin()">
+                <button onclick="checkAdmin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-bold transition shadow-lg cursor-pointer">Akses Panel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const colors = { success: 'bg-emerald-500/95 border-emerald-400', warning: 'bg-amber-500/95 border-amber-400', danger: 'bg-rose-500/95 border-rose-400', info: 'bg-blue-500/95 border-blue-400' };
+            toast.className = `p-3 rounded-xl shadow-lg border text-white text-sm font-semibold backdrop-blur-md flex items-center gap-2 toast-animate ${colors[type]}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.replace('toast-animate', 'toast-exit'); setTimeout(() => toast.remove(), 300); }, 3500);
+        }
+
+        function switchTab(tabId) {
+            ['downloader', 'fitur', 'tatacara'].forEach(id => {
+                document.getElementById(`content-${id}`).classList.add('hidden');
+                document.getElementById(`tab-${id}`).classList.replace('active-tab', 'inactive-tab');
+            });
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.replace('inactive-tab', 'active-tab');
+        }
+
+        function switchBottomNav(pageId) {
+            ['utama', 'informasi'].forEach(id => {
+                document.getElementById(`page-${id}`).classList.add('hidden');
+                document.getElementById(`bnav-${id}`).classList.replace('text-blue-400', 'text-gray-400');
+            });
+            document.getElementById('bnav-download').classList.replace('text-blue-400', 'text-gray-400');
+            if (pageId === 'download') {
+                document.getElementById('content-downloader').classList.remove('hidden');
+                document.getElementById('bnav-download').classList.replace('text-gray-400', 'text-blue-400');
+            } else {
+                document.getElementById('content-downloader').classList.add('hidden');
+                document.getElementById('content-fitur').classList.add('hidden');
+                document.getElementById('content-tatacara').classList.add('hidden');
+                document.getElementById(`page-${pageId}`).classList.remove('hidden');
+                document.getElementById(`bnav-${pageId}`).classList.replace('text-gray-400', 'text-blue-400');
+            }
+        }
+
+        function openDownloaderModal(platform, iconClass) {
+            document.getElementById('modalTitle').innerText = platform + ' Downloader';
+            document.getElementById('modalIcon').className = iconClass;
+            document.getElementById('dlInputUrl').value = '';
+            document.getElementById('dlResultContainer').classList.add('hidden');
+            document.getElementById('dlStatus').classList.add('hidden');
+            document.getElementById('downloaderModal').classList.remove('hidden');
+        }
+
+        function closeDownloaderModal() {
+            document.getElementById('downloaderModal').classList.add('hidden');
+            document.getElementById('mediaPreviewArea').innerHTML = '';
+        }
+
+        async function pasteClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('dlInputUrl').value = text;
+                showToast('Tautan ditempel!', 'info');
+            } catch (err) {
+                showToast('Gagal menempel clipboard.', 'warning');
+            }
+        }
+
+        // DOWNLOADER MULTI-LAYER v3
+        // Catatan: file HTML murni tidak bisa mengatasi CORS dari server pihak ketiga.
+        // Karena itu downloader mencoba endpoint langsung, CORS proxy, lalu membuka direct URL.
+        let currentMediaUrl = '';
+        let currentFileName = '';
+
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        function normalizeInputUrl(value) {
+            let v = String(value || '').trim();
+            if (!v) return null;
+            if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+            try {
+                const u = new URL(v);
+                if (!['http:', 'https:'].includes(u.protocol)) return null;
+                return u.href;
+            } catch (_) { return null; }
+        }
+
+        function detectPlatform(rawUrl) {
+            try {
+                const h = new URL(rawUrl).hostname.toLowerCase().replace(/^www\./, '');
+                if (h === 'tiktok.com' || h.endsWith('.tiktok.com')) return 'tiktok';
+                if (h === 'youtube.com' || h.endsWith('.youtube.com') || h === 'youtu.be') return 'youtube';
+                if (h === 'instagram.com' || h.endsWith('.instagram.com')) return 'instagram';
+                if (h === 'facebook.com' || h.endsWith('.facebook.com') || h === 'fb.watch') return 'facebook';
+                if (h === 'twitter.com' || h.endsWith('.twitter.com') || h === 'x.com' || h.endsWith('.x.com')) return 'twitter';
+                if (h === 'spotify.com' || h.endsWith('.spotify.com')) return 'spotify';
+                return '';
+            } catch (_) { return ''; }
+        }
+
+        function isLikelyMediaUrl(value) {
+            if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) return false;
+            const low = value.toLowerCase();
+            if (/(thumbnail|avatar|profile|cover|icon|logo|imagecdn|placeholder)/i.test(low)) return false;
+            return /\.(mp4|m4v|webm|mov|mkv|mp3|m4a|aac|ogg|opus|wav|jpg|jpeg|png|webp|gif)(?:[?#].*)?$/i.test(low)
+                || /(googlevideo|cdninstagram|fbcdn|twimg|tiktokcdn|muscdn|scdn|video|download|media|\/api\/(?:stream|tunnel))/i.test(low);
+        }
+
+        // URL dari field hasil downloader tertentu (terutama Cobalt) bisa berupa
+        // URL stream/tunnel yang sengaja tidak memiliki ekstensi .mp4. Jangan
+        // membuang URL valid hanya karena bentuknya opaque.
+        function isResultUrl(value, key = '') {
+            if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) return false;
+            if (/(thumbnail|avatar|profile|cover|icon|logo)/i.test(key)) return false;
+            if (/(thumb|avatar|profile|cover|icon|logo)/i.test(value)) return false;
+            return isLikelyMediaUrl(value) || /^(url|link|src|file|play|video|audio|download|download_url|downloadUrl|mediaUrl|direct|video_url|videoUrl|audio_url|audioUrl)$/i.test(key);
+        }
+
+        function findMediaUrl(value, depth = 0, preferredAudio = false, parentKey = '') {
+            if (value == null || depth > 9) return null;
+            if (typeof value === 'string') return isResultUrl(value, parentKey) ? value : null;
+            if (Array.isArray(value)) {
+                for (const item of value) {
+                    const found = findMediaUrl(item, depth + 1, preferredAudio, parentKey);
+                    if (found) return found;
+                }
+                return null;
+            }
+            if (typeof value !== 'object') return null;
+
+            const preferred = preferredAudio
+                ? ['music','audio','audio_url','audioUrl','download','download_url','downloadUrl','url','link','src','file','result','data']
+                : ['play','video','video_url','videoUrl','download','download_url','downloadUrl','mediaUrl','direct','url','link','src','file','result','data','media','medias','items'];
+            for (const key of preferred) {
+                if (Object.prototype.hasOwnProperty.call(value, key)) {
+                    const found = findMediaUrl(value[key], depth + 1, preferredAudio, key);
+                    if (found) return found;
+                }
+            }
+            for (const [key, child] of Object.entries(value)) {
+                if (/(thumbnail|avatar|profile|cover|icon|logo)/i.test(key)) continue;
+                const found = findMediaUrl(child, depth + 1, preferredAudio, key);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function extractFileName(value, fallbackExt) {
+            const candidates = [];
+            const walk = (v, d = 0) => {
+                if (v == null || d > 6) return;
+                if (typeof v === 'object') {
+                    for (const k of ['filename','fileName','name','title','download_name']) {
+                        if (typeof v[k] === 'string' && v[k].trim()) candidates.push(v[k].trim());
+                    }
+                    Object.values(v).forEach(x => walk(x, d + 1));
+                }
+            };
+            walk(value);
+            const safe = (candidates[0] || 'MasIbram_Media').replace(/[\\/:*?"<>|]+/g, '_').trim();
+            return safe || ('MasIbram_Media.' + fallbackExt);
+        }
+
+        async function fetchText(url, options = {}, timeout = 22000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeout);
+            try {
+                const res = await fetch(url, { ...options, signal: controller.signal, cache: 'no-store' });
+                const text = await res.text();
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return text;
+            } finally { clearTimeout(timer); }
+        }
+
+        async function fetchJson(url, options = {}, timeout = 22000) {
+            const text = await fetchText(url, options, timeout);
+            try { return JSON.parse(text); }
+            catch (_) { return text; }
+        }
+
+        function apiProxyUrls(target) {
+            const encoded = encodeURIComponent(target);
+            return [
+                `https://api.allorigins.win/raw?url=${encoded}`,
+                `https://corsproxy.io/?url=${encoded}`
+            ];
+        }
+
+        async function tryGetJson(url) {
+            const attempts = [url, ...apiProxyUrls(url)];
+            let lastError = null;
+            for (const endpoint of attempts) {
+                try {
+                    const data = await fetchJson(endpoint);
+                    return data;
+                } catch (e) { lastError = e; }
+            }
+            throw lastError || new Error('Endpoint gagal');
+        }
+
+        function extractCobaltMedia(data, isAudio) {
+            if (!data || typeof data !== 'object') return null;
+            if (['success', 'redirect', 'stream', 'tunnel'].includes(String(data.status || '').toLowerCase()) && typeof data.url === 'string') {
+                return data.url;
+            }
+            if (isAudio && typeof data.audio === 'string') return data.audio;
+            if (Array.isArray(data.picker)) {
+                const item = data.picker.find(x => x && x.type === 'video') || data.picker.find(x => x && x.url);
+                if (item && typeof item.url === 'string') return item.url;
+            }
+            return findMediaUrl(data, 0, isAudio);
+        }
+
+        async function tryCobalt(url, isAudio, resolution) {
+            // API Cobalt terbaru menggunakan /api/json. vQuality harus berupa
+            // angka seperti 720, bukan "720p". Public instance juga dapat
+            // meminta Turnstile/API key, jadi Cobalt hanya menjadi fallback.
+            const quality = String(resolution || '720').replace(/p$/i, '') || '720';
+            const body = {
+                url,
+                vCodec: 'h264',
+                vQuality: quality,
+                aFormat: 'mp3',
+                isAudioOnly: !!isAudio,
+                filenamePattern: 'pretty'
+            };
+            try {
+                const data = await fetchJson('https://api.cobalt.tools/api/json', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                }, 8000);
+                const media = extractCobaltMedia(data, isAudio);
+                if (media) return { url: media, data };
+            } catch (_) {}
+            return null;
+        }
+
+        function buildApiList(platform, url, isAudio, resolution) {
+            const q = encodeURIComponent(url);
+            const r = encodeURIComponent(resolution);
+            const f = isAudio ? 'mp3' : 'mp4';
+            const list = [];
+            if (platform === 'tiktok') {
+                list.push(`https://www.tikwm.com/api/?url=${q}`);
+                list.push(`https://depay.cloud/api/downloader/tiktok?url=${q}`);
+            }
+            if (platform === 'youtube') {
+                list.push(`https://depay.cloud/api/downloader/ytdl?url=${q}&format=${f}&quality=${r}`);
+                list.push(`https://api.ryzendesu.vip/api/downloader/${isAudio ? 'ytmp3' : 'ytmp4'}?url=${q}`);
+                list.push(`https://api.siputzx.my.id/api/d/youtube?url=${q}&format=${f}`);
+                list.push(`https://widipe.com/download/youtube?url=${q}`);
+            }
+            if (platform === 'instagram') {
+                list.push(`https://depay.cloud/api/downloader/igdownload?url=${q}`);
+                list.push(`https://api.siputzx.my.id/api/d/instagram?url=${q}`);
+                list.push(`https://api.ryzendesu.vip/api/downloader/igdl?url=${q}`);
+                list.push(`https://widipe.com/download/instagram?url=${q}`);
+            }
+            if (platform === 'facebook') {
+                list.push(`https://depay.cloud/api/downloader/facebook?url=${q}`);
+                list.push(`https://api.siputzx.my.id/api/d/facebook?url=${q}`);
+                list.push(`https://api.ryzendesu.vip/api/downloader/fbdl?url=${q}`);
+                list.push(`https://widipe.com/download/facebook?url=${q}`);
+            }
+            if (platform === 'twitter') {
+                list.push(`https://api.siputzx.my.id/api/download/twitter?url=${q}`);
+                list.push(`https://api.ryzendesu.vip/api/downloader/twitterdl?url=${q}`);
+                list.push(`https://widipe.com/download/twitter?url=${q}`);
+            }
+            if (platform === 'spotify') {
+                list.push(`https://depay.cloud/api/downloader/spotify?url=${q}`);
+                list.push(`https://api.ryzendesu.vip/api/downloader/spotify?url=${q}`);
+                list.push(`https://api.siputzx.my.id/api/d/spotify?url=${q}`);
+            }
+            return list;
+        }
+
+        function showMediaPreview(url, isAudio) {
+            const previewArea = document.getElementById('mediaPreviewArea');
+            const low = url.toLowerCase();
+            const isImage = /\.(jpeg|jpg|gif|png|webp)(?:[?#].*)?$/i.test(low);
+            const safeUrl = url.replace(/"/g, '&quot;');
+            if (isAudio) previewArea.innerHTML = `<audio controls class="w-full rounded-lg" src="${safeUrl}"></audio>`;
+            else if (isImage) previewArea.innerHTML = `<img class="w-full max-h-56 rounded-lg object-contain bg-black" src="${safeUrl}" alt="Preview">`;
+            else previewArea.innerHTML = `<video controls playsinline class="w-full max-h-56 rounded-lg object-contain bg-black" src="${safeUrl}"></video>`;
+        }
+
+        // Backend sendiri adalah jalur utama. HTML statis tidak dapat menjamin
+        // downloader lintas platform karena CORS, bot protection, dan perubahan API.
+        async function tryOwnBackend(inputUrl, isAudio, resolution) {
+            const quality = String(resolution || '720').replace(/p$/i, '') || '720';
+            const candidates = [
+                '/api/download?url=' + encodeURIComponent(inputUrl) + '&format=' + (isAudio ? 'mp3' : 'mp4') + '&quality=' + encodeURIComponent(quality),
+                '/download?url=' + encodeURIComponent(inputUrl) + '&format=' + (isAudio ? 'mp3' : 'mp4') + '&quality=' + encodeURIComponent(quality)
+            ];
+            for (const endpoint of candidates) {
+                try {
+                    const data = await fetchJson(endpoint, {}, 45000);
+                    const media = extractBackendMedia(data);
+                    if (media) return { url: media, data };
+                } catch (_) {}
+            }
+            return null;
+        }
+
+        function extractBackendMedia(data) {
+            if (typeof data === 'string' && /^https?:\/\//i.test(data)) return data;
+            if (!data || typeof data !== 'object') return null;
+            if (typeof data.url === 'string' && /^https?:\/\//i.test(data.url)) return data.url;
+            if (typeof data.download_url === 'string' && /^https?:\/\//i.test(data.download_url)) return data.download_url;
+            if (typeof data.file === 'string' && /^https?:\/\//i.test(data.file)) return data.file;
+            return findMediaUrl(data, 0, false);
+        }
+
+        async function processDownload(format) {
+            const raw = document.getElementById('dlInputUrl').value.trim();
+            const inputUrl = normalizeInputUrl(raw);
+            if (!inputUrl) { showToast('URL tidak valid. Masukkan link http/https yang benar.', 'warning'); return; }
+
+            const platform = detectPlatform(inputUrl);
+            if (!platform) {
+                showToast('Platform belum didukung. Gunakan YouTube, TikTok, Instagram, Facebook, X/Twitter, atau Spotify.', 'warning');
+                return;
+            }
+
+            const resolution = document.getElementById('videoResolution').value;
+            const statusDiv = document.getElementById('dlStatus');
+            const resultDiv = document.getElementById('dlResultContainer');
+            const previewArea = document.getElementById('mediaPreviewArea');
+            const isAudio = format === 'MP3';
+            currentMediaUrl = '';
+            currentFileName = '';
+            statusDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            previewArea.innerHTML = '<div class="py-5 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>Mencari server downloader tercepat...</div>';
+
+            let successUrl = null;
+            let responseData = null;
+            let errors = [];
+
+            // Jalur paling andal: server milik sendiri + yt-dlp/ffmpeg.
+            // Jika backend tersedia, tidak ada CORS dari browser ke situs sumber.
+            try {
+                // TikTok dibiarkan memakai jalur lama terlebih dahulu karena itu
+                // sudah stabil pada versi sebelumnya. Backend sendiri menjadi fallback.
+                const own = platform !== 'tiktok' ? await tryOwnBackend(inputUrl, isAudio, resolution) : null;
+                if (own) {
+                    successUrl = own.url;
+                    responseData = own.data;
+                }
+            } catch (e) { errors.push('backend: ' + e.message); }
+
+            // Fallback lama hanya dipakai jika backend sendiri belum terpasang.
+            if (!successUrl) {
+            // Coba endpoint platform-specific terlebih dahulu. Ini penting karena
+            // api.cobalt.tools memakai bot protection/rate limit dan tidak cocok
+            // dijadikan satu-satunya jalur untuk HTML publik.
+            const endpoints = buildApiList(platform, inputUrl, isAudio, resolution);
+            if (endpoints.length) {
+                const results = await Promise.allSettled(endpoints.map(async endpoint => {
+                    const data = await fetchJson(endpoint, {}, 8000);
+                    const media = findMediaUrl(data, 0, isAudio);
+                    if (!media) throw new Error('media tidak ditemukan');
+                    return { endpoint, data, media };
+                }));
+
+                for (const result of results) {
+                    if (result.status === 'fulfilled' && result.value.media) {
+                        successUrl = result.value.media;
+                        responseData = result.value.data;
+                        break;
+                    }
+                    if (result.status === 'rejected') {
+                        errors.push(String(result.reason?.message || 'server gagal'));
+                    }
+                }
+
+                // Bila browser terkena CORS, ulangi GET melalui proxy.
+                if (!successUrl) {
+                    const proxyResults = await Promise.allSettled(endpoints.map(async endpoint => {
+                        const data = await tryGetJson(endpoint);
+                        const media = findMediaUrl(data, 0, isAudio);
+                        if (!media) throw new Error('media tidak ditemukan');
+                        return { endpoint, data, media };
+                    }));
+                    for (const result of proxyResults) {
+                        if (result.status === 'fulfilled' && result.value.media) {
+                            successUrl = result.value.media;
+                            responseData = result.value.data;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            }
+
+            // Jika API publik gagal, gunakan backend sendiri sebagai fallback.
+            if (!successUrl) {
+                try {
+                    const own = await tryOwnBackend(inputUrl, isAudio, resolution);
+                    if (own) { successUrl = own.url; responseData = own.data; }
+                } catch (e) { errors.push('backend: ' + e.message); }
+            }
+
+            // Cobalt hanya fallback terakhir, bukan server utama.
+            if (!successUrl) {
+                try {
+                    const cobalt = await tryCobalt(inputUrl, isAudio, resolution);
+                    if (cobalt) { successUrl = cobalt.url; responseData = cobalt.data; }
+                } catch (e) { errors.push('cobalt: ' + e.message); }
+            }
+
+
+            statusDiv.classList.add('hidden');
+
+            if (!successUrl) {
+                previewArea.innerHTML = '<div class=\"py-4 text-red-400 text-xs\">Backend downloader belum aktif atau semua fallback publik menolak request. Untuk hasil stabil, pasang server.py yang disertakan bersama file ini.</div>';
+                const detail = errors.slice(0, 4).join(' | ');
+                showToast('Backend downloader belum aktif. Pasang server.py agar proses tidak bergantung pada API publik.', 'danger');
+                console.warn('Downloader errors:', detail);
+                return;
+            }
+
+            currentMediaUrl = successUrl;
+            const ext = isAudio ? 'mp3' : (/\.(jpg|jpeg|png|webp|gif)(?:[?#]|$)/i.test(successUrl) ? 'jpg' : 'mp4');
+            currentFileName = extractFileName(responseData, ext);
+            if (!/\.[a-z0-9]{2,5}$/i.test(currentFileName)) currentFileName += '.' + ext;
+
+            showMediaPreview(successUrl, isAudio);
+            resultDiv.classList.remove('hidden');
+            showToast('Berhasil! Hasil media sudah ditemukan.', 'success');
+        }
+
+        async function downloadBlob() {
+            if (!currentMediaUrl) return;
+            const name = currentFileName || `MasIbram_Media_${Date.now()}.mp4`;
+            showToast('Mencoba mengunduh file...', 'info');
+
+            // 1) Coba fetch direct supaya browser benar-benar menyimpan sebagai file.
+            try {
+                const response = await fetch(currentMediaUrl, { mode: 'cors' });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = name;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+                showToast('File berhasil disiapkan untuk diunduh.', 'success');
+                return;
+            } catch (_) {}
+
+            // 2) Coba melalui CORS proxy untuk file yang mengizinkan proxy.
+            for (const proxyUrl of apiProxyUrls(currentMediaUrl)) {
+                try {
+                    const response = await fetch(proxyUrl, { mode: 'cors' });
+                    if (!response.ok) continue;
+                    const blob = await response.blob();
+                    if (!blob.size) continue;
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = name;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+                    showToast('File berhasil disiapkan untuk diunduh.', 'success');
+                    return;
+                } catch (_) {}
+            }
+
+            // 3) Fallback paling aman: buka direct URL. Atribut download lintas-domain
+            // sering diabaikan oleh Chrome sehingga membuka URL adalah fallback wajib.
+            window.open(currentMediaUrl, '_blank', 'noopener,noreferrer');
+            showToast('Server tidak mengizinkan download langsung. Link file dibuka di tab baru; tekan Download/Simpan dari sana.', 'warning');
+        }
+
+        // FUNGSI ADMIN & GAMBAR
+        let isAdmin = false;
+        let currentEditType = '';
+        let currentEditId = '';
+
+        const DEFAULT_IMAGES = {
+            'hero': 'https://i.postimg.cc/bNZkg0fg/cced88c475fe7867b3ce1c8c0e0e4183.jpg',
+            'bg': 'https://i.postimg.cc/bwPrnq6p/193516b63acf80682399a52ba0b4e14f.jpg',
+            'dl-1': 'https://i.postimg.cc/PqKFMYBt/20261004-173134.jpg',
+            'dl-2': 'https://i.postimg.cc/TYgxJNQ5/20261004-175553.jpg',
+            'dl-3': 'https://i.postimg.cc/kGtBdcsP/20261004-162331.jpg',
+            'dl-4': 'https://i.postimg.cc/nctgpFYs/20261004-180038.jpg',
+            'dl-5': 'https://i.postimg.cc/XYszfwMv/20261004-180806.jpg',
+            'dl-6': 'https://i.postimg.cc/KjhqGfT6/20261004-180800.jpg',
+            'ft-1': 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=800&auto=format&fit=crop'
+        };
+
+        function loadSavedImages() {
+            Object.keys(DEFAULT_IMAGES).forEach(key => {
+                const savedImg = localStorage.getItem('img_' + key) || DEFAULT_IMAGES[key];
+                if (key === 'bg') document.body.style.backgroundImage = `linear-gradient(to bottom, rgba(8, 10, 15, 0.5), rgba(8, 10, 15, 0.8)), url('${savedImg}')`;
+                else if (key === 'hero') document.getElementById('heroImage').src = savedImg;
+                else { const el = document.getElementById(`img-${key}`); if (el) el.src = savedImg; }
+            });
+        }
+
+        function toggleAdminModal() {
+            const modal = document.getElementById('adminModal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('adminPassword').focus();
+            }
+        }
+
+        function checkAdmin() {
+            if (document.getElementById('adminPassword').value === 'admin123') { 
+                isAdmin = true;
+                toggleAdminModal();
+                showToast('Berhasil login Mode Admin!', 'success');
+                document.getElementById('adminControlBar').classList.remove('hidden');
+                document.getElementById('editBgBtn').classList.remove('hidden');
+                document.getElementById('editHeroBtn').classList.remove('hidden');
+                document.querySelectorAll('[id^="edit-btn-"]').forEach(btn => btn.classList.remove('hidden'));
+                
+                document.getElementById('adminLockIcon').className = 'fas fa-unlock text-emerald-400';
+                document.getElementById('adminBtnText').innerText = 'Admin Aktif';
+                document.getElementById('adminMainLockBtn').className = 'bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md border border-emerald-400/30 transition flex items-center gap-1.5 shadow-lg cursor-pointer';
+            } else {
+                showToast('Password salah!', 'danger');
+            }
+        }
+
+        function logoutAdmin() {
+            isAdmin = false;
+            document.getElementById('adminControlBar').classList.add('hidden');
+            document.getElementById('editBgBtn').classList.add('hidden');
+            document.getElementById('editHeroBtn').classList.add('hidden');
+            document.querySelectorAll('[id^="edit-btn-"]').forEach(btn => btn.classList.add('hidden'));
+            
+            document.getElementById('adminLockIcon').className = 'fas fa-lock text-gray-300';
+            document.getElementById('adminBtnText').innerText = 'Mode Admin';
+            document.getElementById('adminMainLockBtn').className = 'bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 transition flex items-center gap-1.5 cursor-pointer';
+            showToast('Berhasil keluar Admin', 'info');
+        }
+
+        function openEditModal(type, id = '') {
+            currentEditType = type;
+            currentEditId = id;
+            const key = id ? `${type}-${id}` : type;
+            let currentSrc = '';
+            
+            if (key === 'bg') {
+                const match = document.body.style.backgroundImage.match(/url\(['"]?(.*?)['"]?\)/);
+                currentSrc = match ? match[1] : DEFAULT_IMAGES['bg'];
+            } else if (key === 'hero') currentSrc = document.getElementById('heroImage').src;
+            else currentSrc = document.getElementById(`img-${key}`).src;
+
+            document.getElementById('editPreviewImg').src = currentSrc;
+            document.getElementById('newImgUrl').value = currentSrc;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
+        function updateImagePreview() { document.getElementById('editPreviewImg').src = document.getElementById('newImgUrl').value; }
+
+        function saveImageChange() {
+            const newUrl = document.getElementById('newImgUrl').value.trim();
+            if (!newUrl) { showToast('Isi URL gambar!', 'warning'); return; }
+            localStorage.setItem(`img_${currentEditId ? currentEditType+'-'+currentEditId : currentEditType}`, newUrl);
+            loadSavedImages();
+            closeEditModal();
+            showToast('Gambar diperbarui!', 'success');
+        }
+
+        function confirmResetDefaults() {
+            if(confirm('Reset semua gambar ke setelan asli?')) {
+                Object.keys(DEFAULT_IMAGES).forEach(key => localStorage.removeItem('img_' + key));
+                loadSavedImages();
+                showToast('Tampilan direset ke standar.', 'success');
+            }
+        }
+
+        function exportHtmlFile() {
+            const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'mas-ibram-web.html';
+            a.click();
+            showToast('File HTML berhasil diunduh.', 'success');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadSavedImages);
+    </script>
+</body>
+</html>
